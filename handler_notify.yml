@@ -1,0 +1,12 @@
+- hosts: amoosara-linux
+  user: root
+  sudo: yes
+  gather_facts: no
+  connection: ssh
+  tasks:
+   - name: Install httpd server
+     shell: grep statd /etc/passwd
+     notify: Touch file
+  handlers:
+   - name: Touch file
+     shell: /usr/bin/touch /tmp/handler_test

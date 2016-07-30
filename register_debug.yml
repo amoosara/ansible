@@ -1,0 +1,11 @@
+---
+- hosts: amoosara-linux
+  user: root
+  sudo: yes
+  gather_facts: no
+  tasks:
+   - name: verify the status
+     command: service sysstat status 
+     register: result
+#   - debug: msg="{{ result.stdout }}"
+   - debug: var=result

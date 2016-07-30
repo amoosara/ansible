@@ -1,0 +1,7 @@
+- hosts: amoosara-linux
+  user: root
+  sudo: yes
+  gather_facts: yes 
+  tasks:
+   - name: Testing Template
+     template: src=test_conf.j2 dest=/tmp/test.conf 

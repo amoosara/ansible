@@ -1,0 +1,14 @@
+---
+- hosts: amoosara-linux
+  user: root
+  gather_facts: yes
+  tasks:
+   - name: Check if ntp is running else restart it
+     shell: service ntp status
+     register: result
+#     until: result.stdout.find("running")
+#     retries: 5
+#     delay: 5
+#   - debug: msg="Service is not running sleeping for 3 sec and checking again for 5 times"
+   - debug: var=result
+   - debug: msg="{{The command used to check the status is result.cmd}}"

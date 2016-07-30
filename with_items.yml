@@ -1,0 +1,9 @@
+---
+ - hosts: amoosara-linux
+   user: amoosara
+   tasks:
+    - name: Run a command on multiple values in a loop
+      shell: ls /home/{{ items }}
+      with_items:
+       - amoosara
+       - apanda

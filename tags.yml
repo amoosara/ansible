@@ -1,0 +1,17 @@
+- hosts: amoosara-linux
+  user: root
+  sudo: yes
+  gather_facts: no
+  tasks:
+   - name: Run command A
+     shell: ls /tmp
+     register: out
+   - debug: msg="{{ out.stdout }}"
+     tags:
+      - commandA
+   - name: verify that telnet was installed
+     shell: dpkg -l 
+     register: out1
+   - debug: msg="{{ out1.stdout }}"
+     tags:
+      - commandB

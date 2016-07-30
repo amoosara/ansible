@@ -1,0 +1,14 @@
+---
+- hosts: amoosara-linux
+  gather_facts: false
+  vars_prompt:
+  - name: "NTPServer"
+    prompt: "Please enter the NTP Server name"
+    register:
+  tasks:
+#  - debug: msg="This is test Play to display the value of a variable"
+  - name: Reading a value to a Variable
+    shell: /usr/bin/whoami > /tmp/{{inventory_hostname}}
+    register: "username"
+  - debug: var=username
+  - debug: msg="{{ username.stdout }}"

@@ -1,0 +1,13 @@
+---
+ - hosts: enclosures
+   user: Administrator
+   gather_facts: no
+
+   tasks:
+   - name: Getting Blade server details for enclosure {{ inventory_hostname }}
+     raw: show oa status
+     register: out
+#   - debug: msg="{{ out.stdout }}"
+#   - debug: var={{ out.stdout_lines.Role }}
+   - debug: var=out
+   - debug: var={{ out.stdout_lines }}
