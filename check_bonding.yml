@@ -1,0 +1,5 @@
+---
+ - hosts: bait
+   gather_facts: True
+   roles:
+    - check_bonding
