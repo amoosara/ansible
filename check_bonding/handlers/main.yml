@@ -1,0 +1,5 @@
+---
+# handlers file for check_bonding
+ - name: Module Bonding Available
+#   shell: /usr/bin/touch /tmp/bonding.out
+   local_action: shell  echo " {{ ansible_hostname }} - Probed " >> {{ MODULE_LOG }}
