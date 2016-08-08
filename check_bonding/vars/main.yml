@@ -1,5 +1,5 @@
 ---
-  BASE_LOGDIR: "/etc/ansible/roles/check_bonding/logs"
+  BASE_LOGDIR: "/root/ANSIBLE/playbooks/git/ansible/check_bonding/logs"
   MODULE_NAME: "bonding"
   MODULE_LOG: "{{ BASE_LOGDIR }}/bonding_module_check.out"
   PKG_LOG: "{{ BASE_LOGDIR }}/pkg_check.out"
