@@ -1,0 +1,10 @@
+---
+ - hosts: test
+   tasks:
+   - name: Chech ntp service
+     shell: service ntp status
+     ignore_errors: yes
+     register: out
+   - name: restart ntpd if running
+     service: name=ntp status=started
+     when: out.rc == 1
