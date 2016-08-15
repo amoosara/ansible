@@ -1,0 +1,46 @@
+---
+###Check if Bonding Module is loaded in the kernel####
+ - name: Remove the log file {{ MODULE_LOG }} if it exists
+   local_action: file name={{ MODULE_LOG }} state=absent
+ - name: check if {{ MODULE_NAME }} module is loaded
+   shell: /sbin/lsmod | grep {{ MODULE_NAME }}
+   ignore_errors: yes
+   register: result
+ - local_action: shell /bin/echo "{{ ansible_hostname }} - Probed"  >> {{ MODULE_LOG }}
+   when: result.rc == 0
+ - local_action: shell /bin/echo "{{ ansible_hostname }} - Unprobed"  >> {{ MODULE_LOG }}
+   when: result.rc != 0
+
+###Check if package ifenslave-2.6 is installed###
+ - name: Check if package ifenslave-2.6 is installed
+   local_action: file name={{ PKG_LOG }} state=absent
+ - name: Check if Package "ifenslave-2.6 is installed"
+   shell: /usr/bin/dpkg -l {{ PKG_NAME }}
+   ignore_errors: yes
+   register: pkg_result
+ - local_action: shell /bin/echo "{{ ansible_hostname }} - Installed" >> {{ PKG_LOG }}
+   when: pkg_result.rc == 0
+ - local_action: shell /bin/echo "{{ ansible_hostname }} - Uninstalled" >> {{ PKG_LOG }}
+   when: pkg_result.rc != 0
+
+###Finding Bond interface name###
+ - name: Remove the Bond Name log file {{ BOND_NAME_LOG }} if it exists
+   local_action: file name={{ BOND_NAME_LOG }} state=absent
+ - name: Finding the bond name
+   shell: /bin/ls /proc/net/bonding/
+   ignore_errors: yes
+   register: bond_name
+ - local_action: shell /bin/echo "{{ ansible_hostname }} - {{ bond_name.stdout }}" >> {{ BOND_NAME_LOG }}
+
+
+
+# - name: Generating dynamic inventory file which have {{ MODULE_NAME }} probed
+#   local_action: shell cat {{ MODULE_LOG }} | grep Probed | awk '{print $1}' > {{ BASE_LOGDIR }}/dynamic_inventory
+# - name: Inserting a group name to the dynamic host list
+#   local_action: shell sed -i '1s/^/\[bond_list\]\n/' {{ BASE_LOGDIR }}/dynamic_inventory
+#   run_once: true
+# - hosts: all
+#   hostfile: {{ BASE_LOGDIR }}/dynamic_inventory
+#   commans: ls
+#   register: out
+# - debug: var=out
