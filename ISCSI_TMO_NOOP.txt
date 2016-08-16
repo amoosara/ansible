@@ -1,0 +1,315 @@
+[root@ ISCSI]# cat ISCSI_TMO.sh
+#!/bin/bash
+TXT_COLOUR () {
+txtrst=$(tput sgr0) # Text reset
+txtred=$(tput setaf 1) # Red
+txtgrn=$(tput setaf 2) # Green
+txtblu=$(tput setaf 4) # Blue
+txtwht=$(tput setaf 7) # White
+txtylw=$(tput setaf 3) # Yellow
+        }
+TXT_COLOUR
+> ESSBASE_VG.info
+> ESSBASE_LV.info
+>ISCSI_PRECHECK.log
+        ISCSID_CONF_CHANGE () {
+        cp -p /etc/iscsi/iscsid.conf /etc/iscsi/iscsid.conf.bkp_`date "+%m%b%I%M"`
+        echo "Changing entry in /etc/iscsi/iscsid.conf"
+#######################################################################################################################################
+        grep -w "^node.session.timeo.replacement_timeout" /etc/iscsi/iscsid.conf
+        if [ "$?" == "0" ]
+        then
+                TMO_VAL=`grep -w "^node.session.timeo.replacement_timeout" /etc/iscsi/iscsid.conf |awk '{print $3}'`
+                if [ "$TMO_VAL" == "1200" ]
+                then
+                echo "node.session.timeo.replacement_timeout ....Value already set to 1200${txtgrn}.... skipping${txtrst}"
+                else
+				sed -i 's/^node.session.timeo.replacement_timeout = .*/node.session.timeo.replacement_timeout = 1200/g' /etc/iscsi/iscsid.conf
+                fi
+        else
+        echo "Value not defined . Appending the Value"
+        echo "node.session.timeo.replacement_timeout = 1200" >> /etc/iscsi/iscsid.conf
+        fi
+#######################################################################################################################################
+				        grep -w "^node.conn\[0\].timeo.noop_out_interval" /etc/iscsi/iscsid.conf
+        if [ "$?" == "0" ]
+        then
+                NOOP_INT_VAL=`grep -w "^node.conn\[0\].timeo.noop_out_interval" /etc/iscsi/iscsid.conf |awk '{print $3}'`
+                if [ "$NOOP_INT_VAL" == "0" ]
+                then
+                echo "node.conn[0].timeo.noop_out_interval ....Value already set to 0${txtgrn}.... skipping${txtrst}"
+                else
+				sed -i 's/^node.conn\[0\].timeo.noop_out_interval = .*/node.conn\[0\].timeo.noop_out_interval = 0/g' /etc/iscsi/iscsid.conf
+                fi
+        else
+        echo "Value not defined . Appending the Value"
+        echo "node.conn[0].timeo.noop_out_interval = 0" >> /etc/iscsi/iscsid.conf
+        fi
+#######################################################################################################################################
+				        grep -w "^node.conn\[0\].timeo.noop_out_timeout" /etc/iscsi/iscsid.conf
+        if [ "$?" == "0" ]
+        then
+                NOOP_TMO_VAL=`grep -w "^node.conn\[0\].timeo.noop_out_timeout" /etc/iscsi/iscsid.conf |awk '{print $3}'`
+                if [ "$NOOP_TMO_VAL" == "0" ]
+                then
+                echo "node.conn[0].timeo.noop_out_timeout ....Value already set to 0${txtgrn}.... skipping${txtrst}"
+                else
+				sed -i 's/^node.conn\[0\].timeo.noop_out_timeout = .*/node.conn\[0\].timeo.noop_out_timeout = 0/g' /etc/iscsi/iscsid.conf
+                fi
+        else
+        echo "Value not defined . Appending the Value"
+        echo "node.conn[0].timeo.noop_out_timeout = 0" >> /etc/iscsi/iscsid.conf
+        fi
+#######################################################################################################################################
+		}
+
+PRE_CHECKS () {
+DTE=`date "+%m%b%I%M"`
+echo "${txtblu}Pre-Checks:-${txtrst} in LogFile ${txtblu}ISCSI_PRECHECK.log_${DTE}${txtrst}"
+printf "\n"
+        echo "DISK INFO:-"      >> ISCSI_PRECHECK.log_${DTE}
+        fdisk -l >> ISCSI_PRECHECK.log_${DTE}
+        echo "============================================"     >> ISCSI_PRECHECK.log_${DTE}
+        printf "\n"     >> ISCSI_PRECHECK.log_${DTE}
+        echo "MOUNT INFO:-"     >> ISCSI_PRECHECK.log_${DTE}
+        mount   >> ISCSI_PRECHECK.log_${DTE}
+        echo "============================================"     >> ISCSI_PRECHECK.log_${DTE}
+        printf "\n"     >> ISCSI_PRECHECK.log_${DTE}
+        echo "DEVICE PATHS:-" >> ISCSI_PRECHECK.log_${DTE}
+        ls -l /dev/disk/by-path >> ISCSI_PRECHECK.log_${DTE}
+        echo "============================================"     >> ISCSI_PRECHECK.log_${DTE}
+        printf "\n"     >> ISCSI_PRECHECK.log_${DTE}
+        echo "CURRENT TIMEOUT:-" >> ISCSI_PRECHECK.log_${DTE}
+        for i in `(iscsiadm -m session|awk '{print $3","$4}')`;do x=`echo $i|sed 's/,/ /g'|awk '{print "iscsiadm -m node -T "$3 " -p " $1}'`;$x|grep node.session.timeo.replacement_timeout >>ISCSI_PRECHECK.log;done
+        printf "\n"
+        echo "============================================"     >> ISCSI_PRECHECK.log_${DTE}
+        echo "DF_H INFO:-"      >> ISCSI_PRECHECK.log_${DTE}
+        df -h   >> ISCSI_PRECHECK.log_${DTE}
+        pwd     >> ISCSI_PRECHECK.log_${DTE}
+        echo "============================================"     >> ISCSI_PRECHECK.log_${DTE}
+                printf "\n"     >> ISCSI_PRECHECK.log_${DTE}
+                echo "Current ISCSI SESSION TIMEOUT Values"     >> ISCSI_PRECHECK.log_${DTE}
+                [ ! -f /sys/class/iscsi_session/session\[0-9\]/recovery_tmo ] && cat /sys/class/iscsi_session/session*/recovery_tmo >> ISCSI_PRECHECK.log_${DTE}
+                echo "============================================"     >> ISCSI_PRECHECK.log_${DTE}
+        df -h |grep -i essbase
+		echo "============================================" >> ISCSI_PRECHECK.log_${DTE}
+		echo "node.conn[0].timeo.noop_out_timeout/interval Values" >> ISCSI_PRECHECK.log_${DTE}
+grep -w "^node.conn\[0\].timeo.noop_out_timeout" /etc/iscsi/iscsid.conf >>SCSI_PRECHECK.log_${DTE}
+grep -w "^node.conn\[0\].timeo.noop_out_interval" /etc/iscsi/iscsid.conf >>SCSI_PRECHECK.log_${DTE}
+                }
+#               PRE_CHECKS
+printf "\n"
+                ONFLY_CHANGE () {
+echo "${txtblu}ONFLY CHANGES:-${txtrst}"
+echo "Taking backup & Modifying the ISCSI TimeOut value to 1200 Seconds in /etc/iscsi/iscsid.conf"
+date
+        echo "${txtblu}ISCSI SESSIONS:-${txtrst}"
+        iscsiadm -m session > CURRENT_ISCSI_SESSIONS.info
+                                                if [ -s CURRENT_ISCSI_SESSIONS.info ]
+                        then
+        printf "\n"
+        echo "${txtblu}Current Session TIMEOUT VALUE:-${txtrst}"
+        for i in `(iscsiadm -m session|awk '{print $3","$4}')`;do x=`echo $i|sed 's/,/ /g'|awk '{print "iscsiadm -m node -T "$3 " -p " $1}'`;$x|grep "node.session.timeo.replacement_timeout";done
+        printf "\n"
+        echo "${txtblu}Setting New TIMEOUT VALUE.... to 1200 Secs${txtrst}"
+        for i in `(iscsiadm -m session|awk '{print $3","$4}')`;do x=`echo $i|sed 's/,/ /g'|awk '{print "iscsiadm -m node -T "$3 " -p " $1 " -o update -n node.session.timeo.replacement_timeout -v 1200"}'`;$x;sleep 2;done
+        printf "\n"
+        echo "${txtblu}NEW Session TIMEOUT VALUE:-${txtrst}"
+        for i in `(iscsiadm -m session|awk '{print $3","$4}')`;do x=`echo $i|sed 's/,/ /g'|awk '{print "iscsiadm -m node -T "$3 " -p " $1}'`;$x|grep "node.session.timeo.replacement_timeout";done
+                        ISCSID_CONF_CHANGE
+                        else
+                        echo "No Active Sessions . Changing the value in /etc/iscsi/iscsid.conf"
+                        ISCSID_CONF_CHANGE
+                        fi
+date
+                }
+#               ONFLY_CHANGE
+UMOUNT_ISCSI_RESTART () {
+ISCSID_CONF_CHANGE
+cp -p /etc/fstab /etc/fstabi_bkp_`date "+%m%b%I%M"`
+echo "${txtblu}ESBBASE MOUNTPOINT CHECKS:-${txtrst}"
+printf "\n"
+echo "${txtblu}Identifying Lun based ESSBASE Mount Point:-${txtrst}"
+mount|grep -i '/*/essbase' |grep -v "/export/"|awk '{print $3}'|grep '/*/essbase$' > ESSBASE_MPT.info
+                                                                        if [ -s ESSBASE_MPT.info ]
+                                                                        then
+echo "Checking if the ESSBASE F/S is busy"
+        for MPT in `cat ESSBASE_MPT.info |awk '{print $1}'`
+                do
+                fuser -u $MPT
+                        if [ "$?" == "0" ]
+                        then
+                        echo "$MPT Busy. Attempting to Kill"
+                        fuser -cuk $MPT
+                        else
+                        echo "$MPT is not Busy.Can be unmounted"
+                        fi
+                done
+printf "\n"
+echo "${txtblu}Un-Mounting the ESSBASE F/S:-${txtrst}"
+        for MPT in `cat ESSBASE_MPT.info |awk '{print $1}'`
+                do
+                        [ -z `fuser -u $MPT` ] || echo "No Processes in Use .. U can Unmount"
+                        df -h $MPT
+                        echo -e "${txtylw}Do u Want to UMOUNT[y/n]:\c${txtrst}"
+                        read SEL
+                        if [ "$SEL" == "y" ];
+                        then
+                fuser -cuk $MPT
+                umount -f $MPT
+                        else
+                        exit
+                        fi
+                done
+echo "${txtblu}Checking if LUN is part of LVM :-${txtrst}"
+                vgs >LVMINFO.info
+                                                                                                        if [ -s LVMINFO.info ]
+                                                                                                        then
+        lvdisplay|grep essbase|awk '/LV Name/ {print $3}'|grep -v snap >> ESSBASE_LV.info
+        lvdisplay|grep essbase -A 1 |awk '/VG Name/ {print $3}'|sort -u >> ESSBASE_VG.info
+        echo "Logical VOLUMES (LV):-"
+        cat ESSBASE_LV.info
+        echo "${txtblu}Volume Groups (VG):-${txtrst}"
+        cat ESSBASE_VG.info
+        printf "\n"
+        echo -e "${txtylw}DO U Want to Continue with the VG,LV De-Activation/Activation[y/n]:\c${txtrst}"
+        read SEL
+        if [ "$SEL" == "y" ];
+        then
+echo "${txtylw}De-Activating the LVs:-${txtrst}"
+                for LVPATH in `cat ESSBASE_LV.info|awk '{print $1}'`
+                do
+                lvchange -an $LVPATH
+                echo "$LVPATH"
+                done
+echo "${txtylw}De-Activating the VG:-${txtrst}"
+                for VGNAME in `cat ESSBASE_VG.info|awk '{print $1}'`
+                do
+                vgchange -an $VGNAME
+                echo "$VGNAME"
+                done
+printf "\n"
+echo "----------------------------------------------------------------------------------------------------------------------------------------------------"
+echo "${txtylw}Restarting the ISCSI Service${txtrst}"
+                echo "`hostname`"
+                /etc/init.d/iscsi restart
+echo "----------------------------------------------------------------------------------------------------------------------------------------------------"
+printf "\n"
+sleep 5
+echo "${txtblu}Re-Activating the VG:-${txtrst}"
+                for VGNAME in `cat ESSBASE_VG.info|awk '{print $1}'`
+                do
+                echo $VGNAME
+                sleep 5
+                vgchange -ay ${VGNAME}
+                done
+echo "${txtblu}Re-Activating the LVs${txtrst}"
+                for LVPATH in `cat ESSBASE_LV.info|awk '{print $1}'`
+                do
+                echo $LVPATH
+                sleep 5
+                lvchange -ay ${LVPATH}
+                done
+        else
+        echo "Not De-Activating the LVs & VGs.. exiting"
+        exit
+        fi
+                                                                                                                else
+                                                                                                                echo "Not LVM "
+                                                                                                                echo "${txtblu}Restarting ISCSI Service${txtrst}"
+                                                                                                                /etc/init.d/iscsi restart
+                                                                                                                fi
+echo "${txtblu}Mounting the ESSBASE F/S${txtrst}"
+        for MPT in `cat ESSBASE_MPT.info |awk '{print $1}'`
+                do
+                mount $MPT
+                done
+                                                                                        else
+                                                                                        echo "Not ISCSI Lun based F/S . Exiting "
+                                                                                        fi
+}
+#UMOUNT_ISCSI_RESTART
+POST_CHECKS () {
+DTE=`date "+%m%b%I%M"`
+printf "\n"
+echo "${txtblu}Current Session TIMEOUT VALUE:-${txtrst}" >>POST_CHECKS_{$DTE}.log
+for i in `(iscsiadm -m session|awk '{print $3","$4}')`;do x=`echo $i|sed 's/,/ /g'|awk '{print "iscsiadm -m node -T "$3 " -p " $1}'`;$x|grep "node.session.timeo.replacement_timeout" >>POST_CHECKS_{$DTE}.log;done
+printf "\n" >>POST_CHECKS_{$DTE}.log
+echo "Value in /etc/iscsi/iscsid.confi:-" >>POST_CHECKS_{$DTE}.log
+grep "node.session.timeo.replacement_timeout" /etc/iscsi/iscsid.conf >>POST_CHECKS_{$DTE}.log
+printf "\n" >>POST_CHECKS_{$DTE}.log
+ls -l /sys/class/iscsi_session/session*/recovery_tmo >>POST_CHECKS_{$DTE}.log
+printf "\n" >>POST_CHECKS_{$DTE}.log
+cat /sys/class/iscsi_session/session*/recovery_tmo >>POST_CHECKS_{$DTE}.log
+echo "${txtblu}NEW SESSION TIMEO:-${txtrst}"
+cat /sys/class/iscsi_session/session*/recovery_tmo
+printf "\n"
+printf "\n" >>POST_CHECKS_{$DTE}.log
+df -h  >>POST_CHECKS_{$DTE}.log
+echo "${txtblu}ESSBASE MOUNT${txtrst}"
+df -h |grep essbase
+printf "\n" >>POST_CHECKS_{$DTE}.log
+echo "node.conn[0].timeo.noop_out_timeout/interval Values" >>POST_CHECKS_{$DTE}.log
+grep -w "^node.conn\[0\].timeo.noop_out_timeout" /etc/iscsi/iscsid.conf >>POST_CHECKS_{$DTE}.log
+grep -w "^node.conn\[0\].timeo.noop_out_interval" /etc/iscsi/iscsid.conf >>POST_CHECKS_{$DTE}.log
+echo "node.conn[0].timeo.noop_out_timeout/interval Values"
+grep -w "^node.conn\[0\].timeo.noop_out_timeout" /etc/iscsi/iscsid.conf
+grep -w "^node.conn\[0\].timeo.noop_out_interval" /etc/iscsi/iscsid.conf
+}
+##############################################################################################################################################
+# MAIN PROGRAMME
+##############################################################################################################################################
+echo "Checking FS Type"
+        SWAP_CHK () {
+        SWAP_DSK=`blkid |grep 'TYPE="swap"'|awk '{print $1}'`
+        PVDISK="NOTSDA"
+        [[ `pvdisplay |grep "/dev/sda"` ]] && PVDSK="SDA";
+        for i in $SWAP_DSK;
+        do if [ "$i" == "/dev/sda:" ] && [ "$PVDSK" == "SDA" ];
+        then
+        echo "${txtred}[$i] Probably a SWAP Conflict ${txtrst}"
+        exit
+        else
+        echo "${txtgrn}[$i] No conflict with swap${txtrst}"
+        fi
+        done
+                }
+MPT_PNT=`mount|grep '\<......\>/\essbase'|awk '{print $3}'|grep '/essbase$'`
+df -h $MPT_PNT|grep "/export/"
+if [ "$?" == "0" ];
+then
+echo "${txtylw}ESSBASE Mount is NFS share ${txtrst}"
+ISCSID_CONF_CHANGE
+else
+echo "|---------------------------------------------|"
+echo "[p] Pre-Checks:-"
+echo "[o] OnFly Changes:-"
+echo "[r] Unmount -> RESTART ISCSI -> Mount:-"
+echo "[c] Post Checks:-"
+echo "[q] Quit:-"
+echo "|---------------------------------------------|"
+echo "NOTE:- ${txtylw}PLEASE RUN ALL THE ABOVE OPTIONS [ p,o,r,c ]${txtrst}"
+echo -e "Enter Choice:\c"
+while read choice
+do
+case $choice in
+p|P)
+PRE_CHECKS
+SWAP_CHK
+;;
+o|O) ONFLY_CHANGE
+;;
+r|R)UMOUNT_ISCSI_RESTART
+;;
+q)
+exit
+;;
+c)
+POST_CHECKS
+;;
+*)echo "Invalid Option"
+esac
+echo -e "${txtgrn}Enter your Choice[ p|o|r|c|Quit[q] ]${txtrst}:\c"
+done
+fi
+[root@ ISCSI]#
