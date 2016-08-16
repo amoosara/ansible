@@ -1,0 +1,266 @@
+#!/bin/bash
+####################################
+###     VARIABLES            ###
+####################################
+LOGDIR=/home/sanadm/SWBACKUP/LOG
+BKPDIR=/home/sanadm/SWBACKUP/BKUP
+SPLBKP=/home/sanadm/SWBACKUP/SPLBKUP
+INPDIR=/home/sanadm/SWBACKUP/INP
+####################################
+###     PRE-REQS             ###
+####################################
+[[ -d $LOGDIR ]] || mkdir -p $LOGDIR
+[[ -d $INPDIR ]] || mkdir -p $INPDIR
+[[ -d $BKPDIR ]] || mkdir -p $BKPDIR
+[[ -d $SPLBKP ]] || mkdir -p $SPLBKP
+####################################
+###     FUNCTIONS            ###
+####################################
+USAGE (){
+printf "\n\n"
+echo "USAGE:........."
+printf "\n\n"
+echo "|------------------------------------------------------------------------------------|"
+echo "1) Scheduled Backup "
+echo "$0 -a <FileName>"
+echo "Eg:- $0 -a Switch.List"
+echo "Note:- <FileName> is the name of the File with List of Switches for Backup"
+printf "\n\n"
+echo "2) Manual Backup"
+echo "$0 -m -s <SR #> -d <device> [ -d <device>, -a <device list> ]"
+echo "Note:- Device List seperated by COLON ':'"
+printf "\n\n"
+echo "3) List all available Backups"
+echo "$0 -l"
+echo "List all available backups for a given device"
+echo "$0 -l -d <DeviceName>"
+echo "Eg:- $0 -l -d llg-cit-fswi-01"
+echo "|------------------------------------------------------------------------------------|"
+printf "\n\n"
+}
+### [ END OF FUNCTION ] ###
+SCHED_BKUP () {
+if [ `ls /home/sanadm/$SW_LIST 2>/dev/null |wc -l` -eq 1 ]; then  # To check the parameter $1 is an existent file.
+for i in `cat $SW_LIST`
+do
+##[[ -d /home/sanadm/SWBACKUP/$i ]] || mkdir -p /home/sanadm/SWBACKUP/$i
+[[ -d $BKPDIR/$i ]] || mkdir -p $BKPDIR/$i
+echo "`date` Switch $i backup started" >> $LOGDIR/"$i"_swbkp.log
+echo "`date` Checking for $i switch responsiveness to command." #>> $LOGDIR/"$i"_swbkp.log
+CPU=`ssh -x -o ConnectTimeout=30 -o PreferredAuthentications=publickey swadm@$i uptime 2>/dev/null | awk '( $12 ~ /^[0-9]/ ) {print $12}'`    # This is to check if the switch is responsive or not!
+if [ -n "$CPU" ]; then
+Util=`echo 100 \* $CPU |bc |sed 's/[.].*//'`
+                 if [ $Util -le 150 ]; then
+                DTE=`date +%b%d`
+                 echo "`date` $i switch load is below threshold and safe to run backup." >> $LOGDIR/"$i"_swbkp.log
+                 ssh -x -o ConnectTimeout=30 swadm@$i  configupload -all -scp llgcamadm01.llg.oracle.com,sanadm,$BKPDIR/$i/$i"_bkup_"$DTE.cfg
+                 if [ $? -eq 0 ]; then
+                 echo "`date` $i switch backup completed.... PATH:$BKPDIR/$i" >> $LOGDIR/"$i"_swbkp.log
+                 else
+                 echo "`date` $i switch backup Configupload Failed!!" >> $LOGDIR/"$i"_swbkp.log
+                 echo "`date` $i switch backup Configupload Failed!!" >> $LOGDIR/"$i"_Failedswbkp.log
+            echo "`date` $i switch backup configupload failed.!!" |mailx -s "$i Switch Backup Failed" panduranga.neerati@oracle.com
+                 fi
+                 else
+                 echo "`date` $i switch backup failed.Switch Unresponsive!!" >> $LOGDIR/"$i"_swbkp.log
+            echo "`date` $i switch backup failed.Switch Unresponsive!!" |mailx -s "$i Switch Backup Failed" panduranga.neerati@oracle.com
+                 fi
+else
+echo "`date` $i config backup failed. Login failure." >> $LOGDIR/"$i"_swbkp.log
+echo "`date` $i config backup failed. Login failure.... LOGPATH $LOGDIR"
+echo "`date` $i config backup failed. Login failure." |mailx -s "Switch Backup Script Failed" panduranga.neerati@oracle.com
+fi # end of if for switch responsive check.
+done
+else
+        echo "`date` $1 configuration file with switch_name is missing" >> $LOGDIR/"$i"_swbkp.log
+        echo "`date` $1 configuration file with switch_name is missing" |mailx -s "Switch Backup Script Failed" panduranga.neerati@oracle.com
+fi
+}
+### [ END OF FUNCTION ] ###
+MANL_BKUP () {
+        echo "------------------------------------"
+        cat Switch.List
+        echo "------------------------------------"
+        printf "\n"
+echo "Manual Backup"
+[[ -d $SPLBKP/$SW ]] || mkdir -p $SPLBKP/$SW
+echo "`date` Switch $SW backup started" >> $LOGDIR/"$SW"_swbkp.log
+echo "`date` Checking for $SW switch responsiveness to command." #>> $LOGDIR/"$SW"_swbkp.log
+CPU=`ssh -x -o ConnectTimeout=30 -o PreferredAuthentications=publickey swadm@$SW uptime 2>/dev/null | awk '( $12 ~ /^[0-9]/ ) {print $12}'`    # This is to check if the switch is responsive or not!
+if [ -n "$CPU" ]; then
+Util=`echo 100 \* $CPU |bc |sed 's/[.].*//'`
+                 if [ $Util -le 150 ]; then
+                DTE=`date +%m%d`
+                 echo "`date` $i switch load is below threshold and safe to run backup." >> $LOGDIR/"$SW"_swbkp.log
+                 ssh -x -o ConnectTimeout=30 swadm@$SW  configupload -all -scp llgcamadm01.llg.oracle.com,sanadm,$SPLBKP/$SW/$SW"_"$SR"_"bkup.cfg
+                 if [ $? -eq 0 ]; then
+                 echo "`date` $SW switch MANUAL backup completed Successfully to....PATH:$SPLBKP/$SW."
+                 echo "`date` $SW switch MANUAL backup completed to....PATH:$SPLBKP/$SW." >> $LOGDIR/"$SW"_swbkp.log
+                 else
+                 echo "`date` $SW switch Manual backup Configupload Failed!!" >> $LOGDIR/"$SW"_swbkp.log
+                 echo "`date` $SW switch Manual backup Configupload Failed!!"
+            echo "`date` $SW switch backup configupload failed.!!" |mailx -s "$SW Switch Backup Failed" panduranga.neerati@oracle.com
+                 fi
+                 else
+                 echo "`date` $SW switch backup failed.Switch Unresponsive!!" >> $LOGDIR/"$SW"_swbkp.log
+            echo "`date` $SW switch backup failed.Switch Unresponsive!!" |mailx -s "$SW Switch Backup Failed" panduranga.neerati@oracle.com
+                 fi
+else
+echo "`date` $SW config backup failed. Login failure." >> $LOGDIR/"$SW"_swbkp.log
+echo "`date` $SW config backup failed. Login failure.....check log  $LOGDIR/"$SW"_swbkp.log"
+echo "`date` $SW config backup failed. Login failure." |mailx -s "Switch Backup Script Failed" panduranga.neerati@oracle.com
+fi # end of if for switch responsive check.
+}
+### [END OF FUNCTION ###
+LIST_BKUP () {
+echo "Regular Backups:-"
+ls -lt $BKPDIR/$SW/*.cfg |grep -v total|awk '{print NR" )" $6,$7,$8,$9}'
+printf "\n"
+echo "Manual Backups:-"
+ls -lt $SPLBKP/$SW/*.cfg |grep -v total|awk '{print NR" )" $6,$7,$8,$9}'
+}
+#############################
+#### Retention  Function
+#############################
+RETENTION () {
+BKPDIRPATH="/home/sanadm/SWBACKUP/BKUP"
+[[ -d /home/sanadm/SWBACKUP/TRASH ]] || mkdir -p /home/sanadm/SWBACKUP/TRASH
+for i in `cat Switch.List`
+do
+cd $BKPDIRPATH/$i
+ls -lt *.cfg|awk '(NR > 92) {print "mv " $9 " /home/sanadm/SWBACKUP/TRASH"}'|sh
+done
+if [ -d /home/sanadm/SWBACKUP/TRASH ]
+then
+cd /home/sanadm/SWBACKUP/TRASH
+rm *bkup.cfg
+else
+echo " TRASH DIRECTORY Not Found "
+exit
+fi
+}
+######################### [ END of FUNCTIONS ] #############################
+
+
+
+######################### [ START of SCRIPT ] ##############################
+        #if [ "$1" == "-a" ] || [ "$1" == "-m" ] || [ "$1" == "-l" ] && [ "$#" == "2" ]
+        if [ "$1" == "-a" ] || [ "$1" == "-m" ] || [ "$1" == "-l" ]
+                then
+case $1 in
+-a)
+SW_LIST=$2
+SCHED_BKUP
+;;
+-m)
+if [ "$2" == "-s" ] && [ "$4" == "-a" ] && [ "$#" == "5" ]
+then
+LIST=($5)
+SR=$3
+SWLIST=(`echo ${LIST[@]}|sed 's/:/ /g'`)
+echo "List of devices"
+        for i in `echo ${SWLIST[@]}`
+        do
+        SW=$i
+        echo "Backup Initiated for: $SW"
+        MANL_BKUP
+        done
+elif [ "$2" == "-s" ] && [ "$4" == "-d" ] && [ "$#" == "5" ]
+then
+SR=$3
+SW=$5
+MANL_BKUP
+else
+echo "USAGE:-"
+echo "$0 -m -s <SR #> -d <device> [ -d <device>, -a <device list> ]"
+echo "Note:- Device List is ':' separated"
+fi
+;;
+-l)
+if [ "$1" == "-l" ] && [ "$#" == "1" ]
+then
+        for i in `cat Switch.List`
+        do
+        SW=$i
+        printf "\n"
+        echo "Backup List for SWITCH: $i"
+        echo "-----------------------------------------------------------------------------"
+        LIST_BKUP
+        echo "-----------------------------------------------------------------------------"
+        printf "\n\n"
+        done
+elif [ "$1" == "-l" ] && [ "$2" == "-d" ]
+        then
+        SW=$3
+        printf "\n"
+        echo "Backup List for SWITCH: $SW"
+        echo "-----------------------------------------------------------------------------"
+        LIST_BKUP
+        echo "-----------------------------------------------------------------------------"
+else
+        echo "USAGE:-"
+        echo "$0 -l -d <device>"
+        echo "$0 -l"
+fi
+;;
+*)
+exit
+esac
+                else
+                if [ "$#" == "0" ]
+                then
+                printf "\n"
+                echo "+------------------------------------+"
+                echo "List Backup for a Switch         [l/L]"
+                echo "Backup All Switches in the File  [a/A]"
+                echo "Manual Backup of a single Switch [m/M]"
+                echo "Usage Options                    [h/H]"
+                echo "Quit                             [q|Q]"
+                echo "+------------------------------------+"
+                printf "\n"
+                echo -en "Select an Action [a/m/l/h/q]:\c"
+                read choice
+                printf "\n\n"
+                case $choice in
+                l|L)
+                echo "------------------------------------"
+                cat Switch.List|awk '{print NR". " $1}'
+                echo "------------------------------------"
+                printf "\n"
+                echo -en "Enter the SwitchName:\c"
+                read SW
+                printf "\n"
+                LIST_BKUP
+                printf "\n\n"
+                ;;
+                a|A)
+                echo -en "Enter the FileName with List of Switches:\c"
+                echo "Available File [ Switch.List ] "
+                read SW_LIST
+                SCHED_BKUP
+                ;;
+                m|M)
+                echo -en "Enter the SR Number:\c"
+                read SR
+                MANL_BKUP
+                ;;
+                h|H)
+                USAGE
+                ;;
+                q|Q)
+                exit
+                ;;
+                *)
+                USAGE
+                exit
+                esac
+                else
+                USAGE
+                fi
+        fi
+################################
+### REMOVING BACKUPS  > 92 Days
+touch /home/sanadm/SWBACKUP/TRASH/test_bkup.cfg
+RETENTION
+################################
+###END OF SCRIPT ###
