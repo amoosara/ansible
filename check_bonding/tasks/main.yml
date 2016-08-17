@@ -12,7 +12,7 @@
    when: result.rc != 0
 
 ###Check if package ifenslave-2.6 is installed###
- - name: Check if package ifenslave-2.6 is installed
+ - name: Remove the log file {{ PKG_LOG }} if it exists
    local_action: file name={{ PKG_LOG }} state=absent
  - name: Check if Package "ifenslave-2.6 is installed"
    shell: /usr/bin/dpkg -l {{ PKG_NAME }}
