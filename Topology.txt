@@ -1,0 +1,17 @@
+1) Setup GITHUB
+2) Subscribe to AWS VMs ( About 7 )
+	1- Puppet Master
+	1- Chef Master
+	1- Ansible Controller
+	2- Clients ( Ubuntu/Centos )
+	1- GIT Server
+3) Create Branches for each of the Members
+	Ansible
+	Puppet
+	Chef
+4) Push your ( Each Individual's Playbooks/Manifests/Cookbooks) to GIT Server.
+5) Get/Clone the Manifests/Playbooks/Cookbooks to the respective Masters.
+
+
+6) Why GITHUB ?
+	We will Use this for Other reference DOcs & will also see how we can Chain up Local GIT Server with GITHUB.
