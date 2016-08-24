@@ -9,5 +9,5 @@
     register: out
 
   - name: Delete the stale NFS mount entries from /etc/mtab
-    lineinfile: "dest=/tmp/mtab backup=yes state=absent regexp={{ item }}"
+    lineinfile: "dest=/etc/mtab backup=yes state=absent regexp={{ item }}"
     with_items: '{{ out.stdout_lines }}'
