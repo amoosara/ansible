@@ -1,0 +1,3 @@
+---
+  STALE_MOUNTS: "/tmp/stale_mounts.log"
+  CHK_STALE_MOUNTS_SCRIPT: "/etc/ansible/roles/stalenfs/files/stalenfs_check.sh"

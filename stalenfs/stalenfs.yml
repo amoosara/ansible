@@ -1,0 +1,5 @@
+---
+  - hosts: redhat
+    user: root
+    roles:
+     - stalenfs
