@@ -8,32 +8,27 @@ Requirements
 
 The Playbook will be run as root, if not please modify the user under stalenfs.yml and add sudo to yes
 The Roles path is expected to be /etc/ansible/roles
+Ensure to change the hosts group [redhat] to the required ones.
 
 Role Variables
 --------------
 
-A description of the settable variables for this role should go here, including any variables that are in defaults/main.yml, vars/main.yml, and any variables that can/should be set via parameters to the role. Any variables that are read from other roles and/or the global scope (ie. hostvars, group vars, etc.) should be mentioned here as well.
+2 Variables that are defined are:
+ 1. CHK_STALE_MOUNTS_SCRIPT
+ 2. STALE_MOUNTS
 
 Dependencies
 ------------
 
-A list of other roles hosted on Galaxy should go here, plus any details in regards to parameters that may need to be set for other roles, or variables that are used from other roles.
+NONE
 
-Example Playbook
-----------------
-
-Including an example of how to use your role (for instance, with variables passed in as parameters) is always nice for users too:
-
-    - hosts: servers
-      roles:
-         - { role: username.rolename, x: 42 }
 
 License
 -------
 
-BSD
+NONE
 
 Author Information
 ------------------
 
-An optional section for the role authors to include contact information, or a website (HTML is not allowed).
+Anil Kumar Moosaramtota
