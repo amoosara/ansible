@@ -1,21 +1,13 @@
 ---
-#  - name: Delete file {{ STALE_MOUNTS }}
-#    file: name={{ STALE_MOUNTS }} state="absent"
+  - name: Delete file {{ STALE_MOUNTS }}
+    file: name={{ STALE_MOUNTS }} state="absent"
 
-#  - name: Copy the NFS check script to the Clients
-#    script: "{{ CHK_STALE_MOUNTS_SCRIPT }}"
+  - name: Copy the NFS check script to the Clients
+    script: "{{ CHK_STALE_MOUNTS_SCRIPT }}"
 
   - shell: '/bin/cat {{ STALE_MOUNTS }}'
     register: out
-  - debug: var=out.stdout_lines
 
-  - name: Delete the stale NFS mount from /etc/mtab
+  - name: Delete the stale NFS mount entries from /etc/mtab
     lineinfile: "dest=/tmp/mtab backup=yes state=absent regexp={{ item }}"
     with_items: '{{ out.stdout_lines }}'
-
-#  - name: Delete the stale NFS mount from /etc/mtab
-#    lineinfile: "dest=/tmp/mtab backup=yes state=absent regexp='/dev/shm'"
-#     lineinfile: "dest=/tmp/mtab backup=yes state=absent regexp={{ item }}"
-#     with_items:"{{ map(attribute='out.stdout_lines')|list }}"
-#      - '/dev/shm'
-#      - '/dev/pts'
